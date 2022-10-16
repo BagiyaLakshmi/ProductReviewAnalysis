@@ -11,6 +11,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import Select
 import pandas as pd
 import time
 import os
@@ -52,8 +53,12 @@ def get_links():
 def get_reviews(link_id):
     review_list = []
     try:
+        dropdown = driver.find_element(By.XPATH,'(//span[@class="a-button-text a-declarative"])[1]').click()
+        time.sleep(5)
+        select= driver.find_element(By.XPATH, '//*[@id="sort-order-dropdown_1"]').click()
         for i in range(50):
             time.sleep(5)
+            # dropdown.select_by_value('Most recent')
             profile_name = driver.find_elements(By.XPATH,'//span[@class="a-profile-name"]')
             date = driver.find_elements(By.XPATH,'//span[@class="a-size-base a-color-secondary review-date"]')
             reviews= driver.find_elements(By.XPATH,'//span[@class="a-size-base review-text review-text-content"]/span[1]')
@@ -77,37 +82,41 @@ def get_reviews(link_id):
         return review_list
 
 def scrap(link_id):
-    title = driver.find_element(By.XPATH,'//*[@id="productTitle"]').text
-    store=driver.find_element(By.XPATH,'//div[@class="a-section a-spacing-none"]/a').text 
-    store_new=" ".join((store.split(' '))[2:])
-    rating = driver.find_element(By.XPATH,'(//span[@class="a-icon-alt"])[1]').get_attribute('innerHTML').split()[0]
-    no_rating = driver.find_element(By.XPATH,'(//span[@id="acrCustomerReviewText"])[1]').text
-    info_dict = {
-        "id" : link_id,
-        "title" : title,
-        "store" : store_new,
-        "rating" : rating,
-        "no_rating" : no_rating,
-    }
-    write_csv('datasets/data.csv',info_dict,{"id":"id","title":"title","store":"store","rating":"rating","no_rating":"no_rating"})
-    
-    
     try:
-        show_all =  driver.find_element(By.XPATH,'//*[@id="cr-pagination-footer-0"]/a')
-        show_all.click()
-    except:
-        show_all = driver.find_element(By.XPATH,'//a[@class="a-link-emphasis a-text-bold"]')
-        show_all.click()
+        title = driver.find_element(By.XPATH,'//*[@id="productTitle"]').text
+        category =  driver.find_element(By.XPATH,'(//a[@class="a-link-normal a-color-tertiary"])[1]').text
+        store=driver.find_element(By.XPATH,'//div[@class="a-section a-spacing-none"]/a').text 
+        store_new=" ".join((store.split(' '))[2:])
+        rating = driver.find_element(By.XPATH,'(//span[@class="a-icon-alt"])[1]').get_attribute('innerHTML').split()[0]
+        no_rating = driver.find_element(By.XPATH,'(//span[@id="acrCustomerReviewText"])[1]').text
+        info_dict = {
+            "id" : link_id,
+            "category":category,
+            "title" : title,
+            "store" : store_new,
+            "rating" : rating,
+            "no_rating" : no_rating,
+        }
+        write_csv('datasets/data_2.csv',info_dict,{"id":"id","category":"category","title":"title","store":"store","rating":"rating","no_rating":"no_rating"})
+  
     
-    reviews = get_reviews(link_id)
-    write_csv("datasets/reviews.csv",reviews,{"id":"id","name":"name","data":"data","reviewers_rating":"reviewers_rating","review":"review"})
-    
+        try:
+            show_all =  driver.find_element(By.XPATH,'//*[@id="cr-pagination-footer-0"]/a')
+            show_all.click()
+        except:
+            show_all = driver.find_element(By.XPATH,'//a[@class="a-link-emphasis a-text-bold"]')
+            show_all.click()
         
+        reviews = get_reviews(link_id)
+        write_csv("datasets/reviews_2.csv",reviews,{"id":"id","name":"name","data":"data","reviewers_rating":"reviewers_rating","review":"review"})
+    
+    except:
+        pass   
     
 if __name__ == "__main__":
     links_list = get_links()
-    link_id = 0
-    while(link_id<500):
+    link_id = 500
+    while(link_id<len(links_list)):
         print(links_list[link_id][0])
         driver.get(links_list[link_id][0])
         scrap(link_id)
